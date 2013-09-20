@@ -12,10 +12,7 @@
 # Student side autograding was added by Brad Miller, Nick Hay, and 
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
-
-#BENJAMIN WUZ HERE
-
-
+from __future__ import division
 from util import manhattanDistance
 from game import Directions
 import random, util
@@ -48,13 +45,13 @@ class ReflexAgent(Agent):
 
         # Choose one of the best actions
         scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
-        print"scores:", scores
+        #print"scores:", scores
         bestScore = max(scores)
         bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
         chosenIndex = random.choice(bestIndices) # Pick randomly among the best
 
         "Add more of your code here if you want to"
-        #print legalMoves[chosenIndex]
+        #print"Action,Score:", (legalMoves[chosenIndex], bestScore)
         return legalMoves[chosenIndex]
 
     def evaluationFunction(self, currentGameState, action):
@@ -75,7 +72,7 @@ class ReflexAgent(Agent):
         # Useful information you can extract from a GameState (pacman.py)
         successorGameState = currentGameState.generatePacmanSuccessor(action)
         newPos = successorGameState.getPacmanPosition()
-        newFood = successorGameState.getFood()
+        newFood = successorGameState.getFood().asList()
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
         "*** YOUR CODE HERE ***"
@@ -84,31 +81,38 @@ class ReflexAgent(Agent):
         #print "newFood:", newFood
         #print "newGhostStates:", newGhostStates
         #print "newScaredTimes", newScaredTimes
-        finalScore = 0
+        capsuleScore = 0.0
+        ghostScore = 0.0
+        scareScore = 0.0
+        closestFoodScore = 0.0
+        finalScore = successorGameState.getScore()
         
-        if action =='Stop': 
-            finalScore -= 1
-        
-        newFoodDist = [util.manhattanDistance(newPos, food) for food in newFood]
-        closestFood = min(newFoodDist)
+#         newCapsules = successorGameState.getCapsules()
+#         if len(newCapsules) != 0:
+#             closestCapsule = min([util.manhattanDistance(newPos, cap) for cap in newCapsules])
+#             capsuleScore = (closestCapsule)
+#       
+        if len(newFood) != 0:  
+            newFoodDist = [util.manhattanDistance(newPos, food) for food in newFood]
+            closestFoodScore = 1.0/(min(newFoodDist))
          
-        ghostThreshold = 5
         newGhostPos = successorGameState.getGhostPositions()
         newGhostDist = [util.manhattanDistance(newPos, ghost) for ghost in newGhostPos]
         closestGhostDist = min(newGhostDist)
         ghostIndex = 0 
-        for index in range(len(newGhostDist)): 
-            if newGhostDist[index] == closestGhostDist:
-                ghostIndex = index
-                #print "ghostIndex:", ghostIndex
-        if closestGhostDist <= ghostThreshold: 
-            if newScaredTimes[ghostIndex] > closestGhostDist:
-                finalScore += -closestGhostDist + newScaredTimes[ghostIndex]
-            else:
-                finalScore += -closestGhostDist
- 
-        finalScore += successorGameState.getScore() - closestFood
+        ghostThreshold = 10
         
+        if closestGhostDist < ghostThreshold:
+            for index in range(len(newGhostDist)): 
+                if newGhostDist[index] == closestGhostDist:
+                    ghostIndex = index
+            if newScaredTimes[ghostIndex] > closestGhostDist:
+                scareScore += newScaredTimes[ghostIndex]
+            if closestGhostDist != 0:
+                ghostScore += (1.0/closestGhostDist)
+             
+        finalScore += (1*capsuleScore) + (-1*ghostScore) + (10*scareScore)  + (1*closestFoodScore)
+         
         return finalScore
 
 def scoreEvaluationFunction(currentGameState):
