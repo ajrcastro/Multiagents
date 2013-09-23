@@ -76,11 +76,6 @@ class ReflexAgent(Agent):
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
         "*** YOUR CODE HERE ***"
-        #print "successorGamestate:", successorGameState
-        #print "newPos:", newPos
-        #print "newFood:", newFood
-        #print "newGhostStates:", newGhostStates
-        #print "newScaredTimes", newScaredTimes
         capsuleScore = 0.0
         ghostScore = 0.0
         scareScore = 0.0
@@ -149,6 +144,8 @@ class MinimaxAgent(MultiAgentSearchAgent):
     """
       Your minimax agent (question 2)
     """
+    
+    #Bug: Doesn't Work For Multiple Ghosts per Pacman
 
     def getAction(self, gameState):
         """
@@ -168,7 +165,62 @@ class MinimaxAgent(MultiAgentSearchAgent):
             Returns the total number of agents in the game
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        def maxMove(gameState, counter, last_move):
+            """
+            @author - Joe Choi
+            return the best move the max agent would want to make
+            """
+#             print"maxCounter:", counter
+            if gameState.isWin() or gameState.isLose():
+#                 score = self.evaluationFunction(gameState)
+#                 print "max FINAL:", (counter, score, last_move)
+                return (self.evaluationFunction(gameState), last_move)
+            else:
+                best_score = float("inf") * -1
+                best_move = ""
+                moves = gameState.getLegalActions(self.index) 
+#                 print "Max Moves:", moves
+                if len(moves) == 0:
+                    return (self.evaluationFunction(gameState), last_move)
+                for move in moves: 
+                    move_score = (minMove(gameState.generateSuccessor(self.index, move), counter-1, move, gameState.getNumAgents()-1))[0]
+                    if move_score > best_score:
+                        best_move = move
+                        best_score = move_score
+#                         print "max:", (counter, move_score, move)
+                return (best_score, best_move)
+    
+        def minMove(gameState, counter, last_move, num_ghosts):
+            """
+            @author - Joe Choi
+            return the best move the min agent would want to make
+            """
+#             print "minCounter:", counter
+            if gameState.isLose() or gameState.isWin():
+#                 score = self.evaluationFunction(gameState)
+#                 print "min FINAL:", (counter, score, last_move)
+                return (self.evaluationFunction(gameState), last_move)
+            else:     
+                best_score = float("inf")
+                best_move = ""
+                moves = gameState.getLegalActions(self.index)
+#                 print "Min Moves:", moves
+                for move in moves:
+                    if num_ghosts == 1:
+                        move_score = (maxMove(gameState.generateSuccessor(self.index, move), counter-1, move))[0]
+                    else:
+                        move_score = (minMove(gameState.generateSuccessor(self.index, move), counter-1, move, num_ghosts-1))[0]
+                    if move_score < best_score:
+                        best_move = move
+                        best_score = move_score
+#                         print "min:", (counter, move_score, move)
+                return (best_score, best_move)
+            
+        if self.index == 0:
+            return (maxMove(gameState, self.depth, ""))[1]
+        else:
+            return (minMove(gameState, self.depth, ""))[1]
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
