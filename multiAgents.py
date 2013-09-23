@@ -170,24 +170,19 @@ class MinimaxAgent(MultiAgentSearchAgent):
             @author - Joe Choi
             return the best move the max agent would want to make
             """
-#             print"maxCounter:", counter
-            if gameState.isWin() or gameState.isLose():
-#                 score = self.evaluationFunction(gameState)
-#                 print "max FINAL:", (counter, score, last_move)
+            if gameState.isWin() or gameState.isLose() or counter == 0:
                 return (self.evaluationFunction(gameState), last_move)
             else:
                 best_score = float("inf") * -1
                 best_move = ""
                 moves = gameState.getLegalActions(self.index) 
-#                 print "Max Moves:", moves
                 if len(moves) == 0:
                     return (self.evaluationFunction(gameState), last_move)
                 for move in moves: 
-                    move_score = (minMove(gameState.generateSuccessor(self.index, move), counter-1, move, gameState.getNumAgents()-1))[0]
+                    move_score = (minMove(gameState.generateSuccessor(self.index, move), counter, move, gameState.getNumAgents()-1))[0]
                     if move_score > best_score:
                         best_move = move
                         best_score = move_score
-#                         print "max:", (counter, move_score, move)
                 return (best_score, best_move)
     
         def minMove(gameState, counter, last_move, num_ghosts):
@@ -195,25 +190,21 @@ class MinimaxAgent(MultiAgentSearchAgent):
             @author - Joe Choi
             return the best move the min agent would want to make
             """
-#             print "minCounter:", counter
-            if gameState.isLose() or gameState.isWin():
-#                 score = self.evaluationFunction(gameState)
-#                 print "min FINAL:", (counter, score, last_move)
+
+            if gameState.isLose() or gameState.isWin() or counter == 0:
                 return (self.evaluationFunction(gameState), last_move)
             else:     
                 best_score = float("inf")
                 best_move = ""
                 moves = gameState.getLegalActions(self.index)
-#                 print "Min Moves:", moves
                 for move in moves:
                     if num_ghosts == 1:
                         move_score = (maxMove(gameState.generateSuccessor(self.index, move), counter-1, move))[0]
                     else:
-                        move_score = (minMove(gameState.generateSuccessor(self.index, move), counter-1, move, num_ghosts-1))[0]
+                        move_score = (minMove(gameState.generateSuccessor(self.index, move), counter, move, num_ghosts-1))[0]
                     if move_score < best_score:
                         best_move = move
                         best_score = move_score
-#                         print "min:", (counter, move_score, move)
                 return (best_score, best_move)
             
         if self.index == 0:
