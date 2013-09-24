@@ -87,12 +87,7 @@ class ReflexAgent(Agent):
         scareScore = 0.0
         closestFoodScore = 0.0
         finalScore = successorGameState.getScore()
-        
-#         newCapsules = successorGameState.getCapsules()
-#         if len(newCapsules) != 0:
-#             closestCapsule = min([util.manhattanDistance(newPos, cap) for cap in newCapsules])
-#             capsuleScore = (closestCapsule)
-#       
+       
         if len(newFood) != 0:  
             newFoodDist = [util.manhattanDistance(newPos, food) for food in newFood]
             closestFoodScore = 1.0/(min(newFoodDist))
@@ -170,10 +165,6 @@ class MinimaxAgent(MultiAgentSearchAgent):
         """
         "*** YOUR CODE HERE ***"
         def maxMove(gameState, counter, last_move):
-            """
-            @author - Joe Choi
-            return the best move the max agent would want to make
-            """
             if gameState.isWin() or gameState.isLose() or counter == 0:
                 return (self.evaluationFunction(gameState), last_move)
             else:
@@ -188,10 +179,6 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 return (best_score, best_move)
     
         def minMove(gameState, counter, last_move, num_ghosts):
-            """
-            @author - Joe Choi
-            return the best move the min agent would want to make
-            """
             if gameState.isLose() or gameState.isWin() or counter == 0:
                 return (self.evaluationFunction(gameState), last_move)
             else:     
@@ -227,10 +214,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         "*** YOUR CODE HERE ***"
         def maxMove(gameState, counter, last_move, alpha, beta):
-            """
-            @author - Joe Choi
-            return the best move the max agent would want to make
-            """
             if gameState.isWin() or gameState.isLose() or counter == 0:
                 return (self.evaluationFunction(gameState), last_move)
             else:
@@ -248,10 +231,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                 return (best_score, best_move)
     
         def minMove(gameState, counter, last_move, num_ghosts, alpha, beta):
-            """
-            @author - Joe Choi
-            return the best move the min agent would want to make
-            """
             if gameState.isLose() or gameState.isWin() or counter == 0:
                 return (self.evaluationFunction(gameState), last_move)
             else:     
@@ -291,17 +270,108 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        def maxMove(gameState, counter, last_move):
+            if gameState.isWin() or gameState.isLose() or counter == 0:
+                return (self.evaluationFunction(gameState), last_move)
+            else:
+                best_score = neginf()
+                best_move = last_move
+                moves = gameState.getLegalActions(self.index) 
+                for move in moves: 
+                    move_score = (expMove(gameState.generateSuccessor(self.index, move), counter, move, gameState.getNumAgents()-1))[0]
+                    if move_score > best_score:
+                        best_move = move
+                        best_score = move_score
+                return (best_score, best_move)
+        
+        def expMove(gameState, counter, last_move, num_ghosts):
+            if gameState.isLose() or gameState.isWin() or counter == 0:
+                return (self.evaluationFunction(gameState), last_move)
+            else:     
+                best_score = 0
+                num_agents = gameState.getNumAgents()
+                moves = gameState.getLegalActions(num_agents - num_ghosts)
+                randMove = random.sample(moves, 1)[0] 
+                for move in moves:
+                    prob = 1.0/len(moves)
+                    if num_ghosts == 1:
+                        move_score = (maxMove(gameState.generateSuccessor(num_agents - num_ghosts, move), counter-1, move))[0]
+                    else:
+                        move_score = (expMove(gameState.generateSuccessor(num_agents - num_ghosts, move), counter, move, num_ghosts-1))[0]
+                    best_score += prob * move_score     
+                return (best_score, randMove)   
+        
+        if self.index == 0:
+            toRet = (maxMove(gameState, self.depth, ""))[1]
+        else:
+            toRet = (expMove(gameState, self.depth, ""))[1]
+        return toRet
+
+
 
 def betterEvaluationFunction(currentGameState):
     """
       Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
       evaluation function (question 5).
+    
+      DESCRIPTION: 
+        -Naive Implementation
+        -Always go after the closest food
+        -If near a ghost, enter run_mode    
+        -If in run_mode, go after the pellet
+        -If you have eaten the pellet
+        -Attack at the ghosts
 
-      DESCRIPTION: <write something here so we know what you did>
+      Let's Get Creative!    
+      (1) The ghosts are likely to clump later in the game so save power pellets for the later part of the game
+          -> You want to eat the ghosts when they are clumped together :) [DOUBLE KILL!]
+          -> But make sure they are close to you when you do eat it
+          -> You can do this by luring them! Do this by toggling back and forth 
+    
+      (2) Avoid danger zone, in other words, the bottom row because its easy to get trapped there
+          -> And when you travel that straight line, the ghosts can team up and surround you
+      
+      (3) In the beginning of the game you know that the ghost is in his house. Therefore go after food with higher priority
+          in the beginning of the game
+    
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    #Positions/List of Positions
+    pac_pos = currentGameState.getPacmanPosition() #Just the position
+    ghost_list = currentGameState.getGhostPositions() #List of Ghost positions
+    food_list = currentGameState.getFood().asList() #List of food positions
+
+    #Ghost Info
+    newGhostStates = currentGameState.getGhostStates() #DON"T USE! Only for newScaredTimes
+    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates] #ghostScaredStates
+    "*** YOUR CODE HERE ***"   
+    capsuleScore = 0.0
+    ghostScore = 0.0
+    scareScore = 0.0
+    closestFoodScore = 0.0
+    final_score = currentGameState.getScore()
+        
+    if len(food_list) != 0:  
+        newFoodDist = [util.manhattanDistance(pac_pos, food) for food in food_list]
+        closestFoodScore = 1.0/(min(newFoodDist))
+     
+    newGhostPos = ghost_list
+    newGhostDist = [util.manhattanDistance(pac_pos, ghost) for ghost in newGhostPos]
+    closestGhostDist = min(newGhostDist)
+    ghostIndex = 0 
+    ghostThreshold = 10
+    
+    if closestGhostDist < ghostThreshold:
+        for index in range(len(newGhostDist)): 
+            if newGhostDist[index] == closestGhostDist:
+                ghostIndex = index
+        if newScaredTimes[ghostIndex] > closestGhostDist:
+            scareScore += newScaredTimes[ghostIndex]
+        if closestGhostDist != 0:
+            ghostScore += (1.0/closestGhostDist)
+         
+    final_score += (1*capsuleScore) + (-1*ghostScore) + (10*scareScore)  + (1*closestFoodScore)
+     
+    return final_score
 
 # Abbreviation
 better = betterEvaluationFunction
