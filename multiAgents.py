@@ -20,6 +20,12 @@ import operator
 
 from game import Agent
 
+def inf():
+    return float('inf')
+
+def neginf():
+    return float('inf') * -1
+
 class ReflexAgent(Agent):
     """
       A reflex agent chooses an action at each choice point by examining
@@ -171,7 +177,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
             if gameState.isWin() or gameState.isLose() or counter == 0:
                 return (self.evaluationFunction(gameState), last_move)
             else:
-                best_score = float('inf') * -1
+                best_score = neginf()
                 best_move = last_move
                 moves = gameState.getLegalActions(self.index) 
                 for move in moves: 
@@ -189,7 +195,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
             if gameState.isLose() or gameState.isWin() or counter == 0:
                 return (self.evaluationFunction(gameState), last_move)
             else:     
-                best_score = float('inf')
+                best_score = inf()
                 best_move = last_move
                 num_agents = gameState.getNumAgents()
                 moves = gameState.getLegalActions(num_agents - num_ghosts)
@@ -228,17 +234,17 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             if gameState.isWin() or gameState.isLose() or counter == 0:
                 return (self.evaluationFunction(gameState), last_move)
             else:
-                best_score = float('inf') * -1
+                best_score = neginf()
                 best_move = last_move
-                moves = gameState.getLegalActions(self.index) 
+                moves = gameState.getLegalActions(0) 
                 for move in moves: 
-                    move_score = (minMove(gameState.generateSuccessor(self.index, move), counter, move, gameState.getNumAgents()-1, float('inf'), float('inf') * -1))[0]
+                    move_score = (minMove(gameState.generateSuccessor(self.index, move), counter, move, gameState.getNumAgents()-1, alpha, beta))[0]
                     if move_score > best_score:
                         best_move = move
                         best_score = move_score
                     if best_score > beta:
-                        return (best_score, best_move)
-                alpha = max(best_score, alpha)
+                        break
+                    alpha = max(alpha, best_score)
                 return (best_score, best_move)
     
         def minMove(gameState, counter, last_move, num_ghosts, alpha, beta):
@@ -249,7 +255,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             if gameState.isLose() or gameState.isWin() or counter == 0:
                 return (self.evaluationFunction(gameState), last_move)
             else:     
-                best_score = float('inf')
+                best_score = inf()
                 best_move = last_move
                 num_agents = gameState.getNumAgents()
                 moves = gameState.getLegalActions(num_agents - num_ghosts)
@@ -262,14 +268,14 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                         best_move = move
                         best_score = move_score
                     if best_score < alpha:
-                        return (best_score, best_move)
+                        break
                     beta = min(beta, best_score)
                 return (best_score, best_move)
             
         if self.index == 0:
-            toRet = (maxMove(gameState, self.depth, "", 0, 0))[1]
+            toRet = (maxMove(gameState, self.depth, "", -1 * float('inf'), float('inf')))[1]
         else:
-            toRet = (minMove(gameState, self.depth, "", gameState.getNumAgents(), 0, 0))[1]
+            toRet = (minMove(gameState, self.depth, "", gameState.getNumAgents(), neginf(), inf()))[1]
         return toRet
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
